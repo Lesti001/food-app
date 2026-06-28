@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+*.env
+
+# Expo
+client/.expo/
+client/dist/
+client/web-build/
+client/.expo-shared/
+
+# Native build artifacts
+client/ios/
+client/android/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Misc
+*.pem
+.cache/
+coverage/
