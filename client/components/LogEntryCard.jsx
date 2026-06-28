@@ -1,45 +1,61 @@
-import React, { useRef } from 'react';
-import { View, Text, Animated, PanResponder, Alert } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
-export function LogEntryCard({ entry, onDelete }) {
-  const translateX = useRef(new Animated.Value(0)).current;
+function TrashIcon({ color = '#94A3B8', size = 18 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M9 3a1 1 0 0 0-1 1v1H4a1 1 0 1 0 0 2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7h1a1 1 0 1 0 0-2h-4V4a1 1 0 0 0-1-1H9zm1 2h4v1h-4V5zM7 7h10v12H7V7zm3 2a1 1 0 0 0-1 1v6a1 1 0 1 0 2 0v-6a1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1v6a1 1 0 1 0 2 0v-6a1 1 0 0 0-1-1z"
+        fill={color}
+      />
+    </Svg>
+  );
+}
 
-  const pan = PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8,
-    onPanResponderMove: (_, g) => { if (g.dx < 0) translateX.setValue(g.dx); },
-    onPanResponderRelease: (_, g) => {
-      if (g.dx < -80) {
-        Alert.alert('Delete', `Remove ${entry.foodItem.name}?`, [
-          { text: 'Cancel', onPress: () => Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start() },
-          { text: 'Delete', style: 'destructive', onPress: () => onDelete(entry.id) },
-        ]);
-      } else {
-        Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
-      }
-    },
-  });
+function DragHandleIcon({ color = '#CBD5E1', size = 16 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M9 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM9 13.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM9 21a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"
+        fill={color}
+      />
+    </Svg>
+  );
+}
+
+export function LogEntryCard({ entry, onDelete, dragHandlers, isDragging }) {
+  function handleDelete() {
+    Alert.alert('Delete', `Remove ${entry.foodItem.name}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => onDelete(entry.id) },
+    ]);
+  }
 
   return (
-    <View className="my-1">
-      <View className="absolute right-0 top-0 bottom-0 w-20 bg-peach rounded-2xl items-center justify-center">
-        <Text className="text-white text-xs font-bold">Delete</Text>
+    <View
+      className="bg-surface rounded-2xl p-4 mb-2.5 flex-row items-center border border-border"
+      style={{ opacity: isDragging ? 0.3 : 1 }}
+    >
+      <View {...(dragHandlers ?? {})} style={{ paddingRight: 10 }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 4 }}>
+        <DragHandleIcon />
       </View>
-      <Animated.View
-        {...pan.panHandlers}
-        style={{ transform: [{ translateX }] }}
-        className="bg-surface rounded-2xl p-4 flex-row items-center justify-between border border-border"
-      >
-        <View className="flex-1">
-          <Text className="text-ink text-base font-semibold">{entry.foodItem.name}</Text>
-          <Text className="text-muted text-xs mt-0.5">{entry.portionGrams}g</Text>
-        </View>
-        <View className="items-end">
-          <Text className="text-primary text-base font-bold">{Math.round(entry.macros.calories)} kcal</Text>
-          <Text className="text-faint text-xs mt-0.5">
-            P {entry.macros.protein.toFixed(0)}g · C {entry.macros.carbs.toFixed(0)}g · F {entry.macros.fat.toFixed(0)}g
-          </Text>
-        </View>
-      </Animated.View>
+
+      <View className="flex-1">
+        <Text className="text-ink text-base font-semibold">{entry.foodItem.name}</Text>
+        <Text className="text-muted text-xs mt-0.5">{entry.portionGrams}g</Text>
+      </View>
+
+      <View className="items-end mr-3">
+        <Text className="text-primary text-base font-bold">{Math.round(entry.macros.calories)} kcal</Text>
+        <Text className="text-faint text-xs mt-0.5">
+          P {entry.macros.protein.toFixed(0)}g · C {entry.macros.carbs.toFixed(0)}g · F {entry.macros.fat.toFixed(0)}g
+        </Text>
+      </View>
+
+      <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TrashIcon />
+      </TouchableOpacity>
     </View>
   );
 }

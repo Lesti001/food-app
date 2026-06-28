@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Animated, PanResponder } from 'react-native';
 import { router } from 'expo-router';
 import { useLogStore } from '../../store/logStore';
 import { LogEntryCard } from '../../components/LogEntryCard';
-import { deleteLogEntry } from '../../services/log';
+import { deleteLogEntry, updateLogEntry } from '../../services/log';
 
 const MEALS = [
   { key: 'breakfast', label: 'Breakfast', abbr: 'B', color: '#FDE68A', textColor: '#92400E' },
@@ -13,18 +13,97 @@ const MEALS = [
 ];
 
 export default function LogScreen() {
-  const { dailyLog, removeEntry } = useLogStore();
+  const { dailyLog, removeEntry, moveEntry } = useLogStore();
   const entries = dailyLog?.entries ?? [];
   const totals  = dailyLog?.totals  ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+  const rootRef        = useRef(null);
+  const rootOffset      = useRef(0);
+  const sectionRefs      = useRef({});
+  const sectionBounds   = useRef({});
+  const dragY            = useRef(new Animated.Value(0)).current;
+  const panResponderCache = useRef({});
+  const draggingEntryRef = useRef(null);
+  const hoverMealRef     = useRef(null);
+
+  const [draggingEntry, setDraggingEntry] = useState(null);
+  const [hoverMeal,     setHoverMeal]     = useState(null);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
 
   async function handleDelete(id) {
     removeEntry(id);
     await deleteLogEntry(id);
   }
 
+  function measureSections() {
+    rootRef.current?.measure((x, y, width, height, pageX, pageY) => {
+      rootOffset.current = pageY;
+      MEALS.forEach((meal) => {
+        const ref = sectionRefs.current[meal.key];
+        ref?.measure?.((x2, y2, w2, h2, px2, py2) => {
+          sectionBounds.current[meal.key] = { top: py2 - pageY, bottom: py2 - pageY + h2 };
+        });
+      });
+    });
+  }
+
+  function getPanResponder(entry) {
+    const cacheKey = `${entry.id}:${entry.mealType}`;
+    if (panResponderCache.current[cacheKey]) return panResponderCache.current[cacheKey];
+
+    const responder = PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+      onPanResponderGrant: (evt) => {
+        draggingEntryRef.current = entry;
+        hoverMealRef.current = null;
+        setDraggingEntry(entry);
+        setScrollEnabled(false);
+        dragY.setValue(evt.nativeEvent.pageY - rootOffset.current);
+        measureSections();
+      },
+      onPanResponderMove: (evt) => {
+        const localY = evt.nativeEvent.pageY - rootOffset.current;
+        dragY.setValue(localY);
+        const hit = Object.entries(sectionBounds.current).find(
+          ([, b]) => localY >= b.top && localY <= b.bottom
+        );
+        const key = hit ? hit[0] : null;
+        if (key !== hoverMealRef.current) {
+          hoverMealRef.current = key;
+          setHoverMeal(key);
+        }
+      },
+      onPanResponderRelease: () => {
+        const current = draggingEntryRef.current;
+        const target = hoverMealRef.current;
+        if (current && target && target !== current.mealType) {
+          moveEntry(current.id, target);
+          updateLogEntry(current.id, target);
+        }
+        draggingEntryRef.current = null;
+        hoverMealRef.current = null;
+        setDraggingEntry(null);
+        setHoverMeal(null);
+        setScrollEnabled(true);
+      },
+      onPanResponderTerminate: () => {
+        draggingEntryRef.current = null;
+        hoverMealRef.current = null;
+        setDraggingEntry(null);
+        setHoverMeal(null);
+        setScrollEnabled(true);
+      },
+    });
+
+    panResponderCache.current[cacheKey] = responder;
+    return responder;
+  }
+
   return (
-    <View className="flex-1 bg-bg">
+    <View className="flex-1 bg-bg" ref={rootRef} collapsable={false}>
       <ScrollView
+        scrollEnabled={scrollEnabled}
         contentContainerStyle={{ paddingTop: 64, paddingHorizontal: 20, paddingBottom: 130 }}
         showsVerticalScrollIndicator={false}
       >
@@ -44,8 +123,16 @@ export default function LogScreen() {
         {MEALS.map((meal) => {
           const mealEntries = entries.filter((e) => e.mealType === meal.key);
           const mealCal     = mealEntries.reduce((s, e) => s + e.macros.calories, 0);
+          const isHovered   = draggingEntry && hoverMeal === meal.key && draggingEntry.mealType !== meal.key;
+
           return (
-            <View key={meal.key} className="mb-6">
+            <View
+              key={meal.key}
+              ref={(r) => { sectionRefs.current[meal.key] = r; }}
+              collapsable={false}
+              className="mb-6"
+              style={isHovered ? { backgroundColor: '#EEF2FF', borderRadius: 20, padding: 8, margin: -8 } : null}
+            >
               <View className="flex-row justify-between items-center mb-2.5">
                 <View className="flex-row items-center gap-2.5">
                   <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: meal.color }}>
@@ -69,12 +156,46 @@ export default function LogScreen() {
                   <Text className="text-faint text-sm">No foods logged yet</Text>
                 </View>
               ) : (
-                mealEntries.map((e) => <LogEntryCard key={e.id} entry={e} onDelete={handleDelete} />)
+                mealEntries.map((e) => (
+                  <LogEntryCard
+                    key={e.id}
+                    entry={e}
+                    onDelete={handleDelete}
+                    dragHandlers={getPanResponder(e).panHandlers}
+                    isDragging={draggingEntry?.id === e.id}
+                  />
+                ))
               )}
             </View>
           );
         })}
+
+        <Text className="text-faint text-xs text-center mt-2">
+          Hold the ⠿ handle and drag a food to move it to another meal
+        </Text>
       </ScrollView>
+
+      {draggingEntry && (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: 20,
+            right: 20,
+            transform: [{ translateY: dragY }],
+          }}
+        >
+          <View
+            className="bg-surface rounded-2xl p-4 border-2 border-primary"
+            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12 }}
+          >
+            <Text className="text-ink text-base font-semibold">{draggingEntry.foodItem.name}</Text>
+            <Text className="text-primary text-sm font-bold mt-0.5">
+              {Math.round(draggingEntry.macros.calories)} kcal
+            </Text>
+          </View>
+        </Animated.View>
+      )}
     </View>
   );
 }

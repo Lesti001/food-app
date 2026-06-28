@@ -1,11 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, PanResponder } from 'react-native';
 
+const OFFSCREEN = 600;
+
 export function SwipeSheet({ visible, onClose, children, className }) {
-  const translateY = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(OFFSCREEN)).current;
 
   useEffect(() => {
-    if (visible) translateY.setValue(0);
+    if (visible) {
+      translateY.setValue(OFFSCREEN);
+      Animated.timing(translateY, { toValue: 0, duration: 250, useNativeDriver: true }).start();
+    }
   }, [visible]);
 
   const pan = PanResponder.create({
@@ -13,7 +18,7 @@ export function SwipeSheet({ visible, onClose, children, className }) {
     onPanResponderMove: (_, g) => { if (g.dy > 0) translateY.setValue(g.dy); },
     onPanResponderRelease: (_, g) => {
       if (g.dy > 90 || g.vy > 1.5) {
-        Animated.timing(translateY, { toValue: 800, duration: 180, useNativeDriver: true })
+        Animated.timing(translateY, { toValue: OFFSCREEN, duration: 180, useNativeDriver: true })
           .start(() => onClose());
       } else {
         Animated.spring(translateY, { toValue: 0, useNativeDriver: true, bounciness: 4 }).start();

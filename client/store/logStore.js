@@ -29,6 +29,12 @@ export const useLogStore = create((set) => ({
       const entries = [...state.dailyLog.entries, entry];
       return { dailyLog: { ...state.dailyLog, entries, totals: recalcTotals(entries) } };
     }),
+  moveEntry: (id, mealType) =>
+    set((state) => {
+      if (!state.dailyLog) return state;
+      const entries = state.dailyLog.entries.map((e) => (e.id === id ? { ...e, mealType } : e));
+      return { dailyLog: { ...state.dailyLog, entries } };
+    }),
   // Quick-add: bumps totals and inserts a minimal log entry
   quickAdd: (field, amount) =>
     set((state) => {

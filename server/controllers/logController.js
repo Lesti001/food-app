@@ -68,6 +68,27 @@ async function addLogEntry(req, res) {
   return res.status(201).json(serializeDay(date, history));
 }
 
+async function updateLogEntry(req, res) {
+  const { id } = req.params;
+  const { mealType } = req.body;
+
+  if (!mealType) {
+    return res.status(400).json({ message: 'mealType is required' });
+  }
+
+  const histories = await History.findAll({ where: { userId: req.userId } });
+  const history = histories.find((h) => (h.entries ?? []).some((e) => e.id === id));
+
+  if (!history) {
+    return res.status(404).json({ message: 'Log entry not found' });
+  }
+
+  const entries = history.entries.map((e) => (e.id === id ? { ...e, mealType } : e));
+  await history.update({ entries });
+
+  return res.json(serializeDay(history.date, history));
+}
+
 async function deleteLogEntry(req, res) {
   const { id } = req.params;
 
@@ -92,4 +113,4 @@ async function deleteLogEntry(req, res) {
   return res.status(204).send();
 }
 
-module.exports = { getDailyLog, addLogEntry, deleteLogEntry };
+module.exports = { getDailyLog, addLogEntry, updateLogEntry, deleteLogEntry };

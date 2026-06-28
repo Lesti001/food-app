@@ -19,6 +19,15 @@ export async function addLogEntry(data) {
   }
 }
 
+export async function updateLogEntry(id, mealType) {
+  try {
+    const res = await apiClient.patch(`/log/${id}`, { mealType });
+    return res.data;
+  } catch {
+    return null;
+  }
+}
+
 export async function deleteLogEntry(id) {
   try {
     await apiClient.delete(`/log/${id}`);
