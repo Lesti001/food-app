@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '../store/authStore';
 import { useProfileStore } from '../store/profileStore';
 import { fetchProfile } from '../services/profile';
+import { startNetworkSync } from '../services/network';
 import { Toast } from '../components/Toast';
 import '../global.css';
 
@@ -14,15 +15,18 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
-  const loadToken = useAuthStore((s) => s.loadToken);
+  const loadAuth = useAuthStore((s) => s.loadAuth);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const setProfile = useProfileStore((s) => s.setProfile);
 
-  useEffect(() => { loadToken(); }, []);
+  useEffect(() => {
+    loadAuth();
+    startNetworkSync();
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchProfile().then(setProfile);
+      fetchProfile().then((data) => { if (data) setProfile(data); });
     }
   }, [isAuthenticated]);
 

@@ -1,13 +1,22 @@
 import { apiClient } from './api';
+import { enqueue } from './syncQueue';
 
 export async function fetchPrivateFoods() {
   const res = await apiClient.get('/foods/private');
   return res.data;
 }
 
-export async function createPrivateFood({ name, brand, calories, protein, carbs, fat }) {
-  const res = await apiClient.post('/foods/private', { name, brand, calories, protein, carbs, fat });
-  return res.data;
+export async function createPrivateFood(payload) {
+  try {
+    const res = await apiClient.post('/foods/private', payload);
+    return res.data;
+  } catch (err) {
+    if (!err.response) {
+      await enqueue({ type: 'createPrivateFood', payload });
+      return null;
+    }
+    throw err;
+  }
 }
 
 export async function deletePrivateFood(id) {

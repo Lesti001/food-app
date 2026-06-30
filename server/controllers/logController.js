@@ -116,15 +116,20 @@ async function deleteLogEntry(req, res) {
   }
 
   const entries = history.entries.filter((e) => e.id !== id);
-  const totals = recalcTotals(entries);
 
-  await history.update({
-    entries,
-    calories: totals.calories,
-    protein: totals.protein,
-    carbohydrates: totals.carbs,
-    fat: totals.fat,
-  });
+  if (entries.length === 0) {
+    // Don't keep an empty row around just to store zeroed-out totals
+    await history.destroy();
+  } else {
+    const totals = recalcTotals(entries);
+    await history.update({
+      entries,
+      calories: totals.calories,
+      protein: totals.protein,
+      carbohydrates: totals.carbs,
+      fat: totals.fat,
+    });
+  }
 
   return res.status(204).send();
 }

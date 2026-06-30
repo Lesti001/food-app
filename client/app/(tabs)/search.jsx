@@ -81,7 +81,7 @@ export default function SearchScreen() {
     if (!newName.trim()) return;
     setSavingFood(true);
     try {
-      await createPrivateFood({
+      const result = await createPrivateFood({
         name: newName.trim(),
         brand: newBrand.trim() || undefined,
         calories: parseFloat(newCalories) || 0,
@@ -91,7 +91,11 @@ export default function SearchScreen() {
       });
       setAddFoodVisible(false);
       if (query.trim()) doSearch(query);
-      toast.success(`${newName.trim()} added to your foods.`);
+      toast.success(
+        result
+          ? `${newName.trim()} added to your foods.`
+          : `${newName.trim()} saved offline — will sync when you're back online.`
+      );
     } catch (err) {
       const message = err?.response?.data?.message ?? 'Could not save this food. Please try again.';
       toast.error(message);
