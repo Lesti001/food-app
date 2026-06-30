@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { useProfileStore } from '../../store/profileStore';
 import { useAuthStore } from '../../store/authStore';
 import { updateProfile } from '../../services/profile';
 import { logout } from '../../services/auth';
 import { Input } from '../../components/Input';
+import { toast } from '../../store/toastStore';
 
 const ACTIVITY_OPTIONS = [
   { key: 'sedentary',   label: 'Sedentary',   multiplier: 1.2   },
@@ -78,7 +79,7 @@ export default function ProfileScreen() {
     };
     updateLocal(updates);
     await updateProfile(updates);
-    Alert.alert('Saved', 'Your profile has been updated.');
+    toast.success('Your profile has been updated.');
   }
 
   async function handleLogout() {
@@ -139,6 +140,18 @@ export default function ProfileScreen() {
             <Text className="text-faint text-xs mt-1">Estimated daily calorie need</Text>
           </View>
         </View>
+
+        {/* Calendar link */}
+        <TouchableOpacity
+          onPress={() => router.push('/calendar')}
+          className="bg-surface rounded-3xl p-5 mb-4 flex-row items-center justify-between border border-border"
+        >
+          <View>
+            <Text className="text-ink text-base font-bold">Calendar</Text>
+            <Text className="text-muted text-xs mt-0.5">See your daily calorie goal progress</Text>
+          </View>
+          <Text className="text-primary text-xl font-bold">›</Text>
+        </TouchableOpacity>
 
         {/* Goals */}
         <View className="bg-surface rounded-3xl p-5 mb-5 gap-4 border border-border">

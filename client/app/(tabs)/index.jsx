@@ -10,7 +10,8 @@ import { CalorieRing } from '../../components/CalorieRing';
 import { MacroCard } from '../../components/MacroCard';
 import { useLogStore } from '../../store/logStore';
 import { useProfileStore } from '../../store/profileStore';
-import { fetchDailyLog, addLogEntry } from '../../services/log';
+import { fetchDailyLog, addLogEntry, deleteLogEntry } from '../../services/log';
+import { toast } from '../../store/toastStore';
 
 const QUICK_FIELDS = [
   { key: 'calories', label: 'Calories',      unit: 'kcal', color: '#7C9FE4', track: '#DBEAFE' },
@@ -22,7 +23,7 @@ const QUICK_FIELDS = [
 const INPUT_ACCESSORY_ID = 'quickAddInput';
 
 export default function HomeScreen() {
-  const { selectedDate, setDailyLog, dailyLog, quickAdd } = useLogStore();
+  const { selectedDate, setDailyLog, dailyLog, addEntry, removeEntry } = useLogStore();
   const profile = useProfileStore((s) => s.profile);
 
   const [activeField, setActiveField] = useState(null);
@@ -45,24 +46,37 @@ export default function HomeScreen() {
     setTimeout(() => inputRef.current?.focus(), 100);
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     const amount = parseFloat(inputValue);
-    if (!isNaN(amount) && amount > 0 && activeField) {
-      quickAdd(activeField.key, amount);
-      addLogEntry({
-        foodItem: {
-          id: `manual-${Date.now()}`,
-          name: 'Manual entry',
-          per100g: { calories: 0, protein: 0, carbs: 0, fat: 0 },
-        },
-        mealType: 'snacks',
-        portionGrams: 0,
-        date: selectedDate,
-        macros: { calories: 0, protein: 0, carbs: 0, fat: 0, [activeField.key]: amount },
-      });
-    }
+    const field = activeField;
     setActiveField(null);
     setInputValue('');
+
+    if (isNaN(amount) || amount <= 0 || !field) return;
+
+    const payload = {
+      foodItem: {
+        id: `manual-${Date.now()}`,
+        name: 'Manual entry',
+        per100g: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      },
+      mealType: 'snacks',
+      portionGrams: 0,
+      date: selectedDate,
+      macros: { calories: 0, protein: 0, carbs: 0, fat: 0, [field.key]: amount },
+    };
+
+    const result = await addLogEntry(payload);
+    const entry = result?.entries?.[result.entries.length - 1] ?? { id: Date.now(), ...payload };
+    addEntry(entry);
+
+    toast.success(`+${amount} ${field.unit} ${field.label} added`, {
+      actionLabel: 'Undo',
+      onAction: async () => {
+        removeEntry(entry.id);
+        await deleteLogEntry(entry.id);
+      },
+    });
   }
 
   return (

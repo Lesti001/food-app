@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '../store/authStore';
 import { useProfileStore } from '../store/profileStore';
 import { fetchProfile } from '../services/profile';
+import { Toast } from '../components/Toast';
 import '../global.css';
 
 const queryClient = new QueryClient({
@@ -32,7 +33,9 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F5F3FF' } }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="calendar" />
         </Stack>
+        <Toast />
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

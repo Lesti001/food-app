@@ -3,7 +3,8 @@ import { View, Text, ScrollView, TouchableOpacity, Animated, PanResponder } from
 import { router } from 'expo-router';
 import { useLogStore } from '../../store/logStore';
 import { LogEntryCard } from '../../components/LogEntryCard';
-import { deleteLogEntry, updateLogEntry } from '../../services/log';
+import { addLogEntry, deleteLogEntry, updateLogEntry } from '../../services/log';
+import { toast } from '../../store/toastStore';
 
 const MEALS = [
   { key: 'breakfast', label: 'Breakfast', abbr: 'B', color: '#FDE68A', textColor: '#92400E' },
@@ -13,7 +14,7 @@ const MEALS = [
 ];
 
 export default function LogScreen() {
-  const { dailyLog, removeEntry, moveEntry } = useLogStore();
+  const { dailyLog, removeEntry, addEntry, moveEntry } = useLogStore();
   const entries = dailyLog?.entries ?? [];
   const totals  = dailyLog?.totals  ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
@@ -22,6 +23,8 @@ export default function LogScreen() {
   const sectionRefs      = useRef({});
   const sectionBounds   = useRef({});
   const dragY            = useRef(new Animated.Value(0)).current;
+  const dragStartY       = useRef(0);
+  const lastPageY        = useRef(0);
   const panResponderCache = useRef({});
   const draggingEntryRef = useRef(null);
   const hoverMealRef     = useRef(null);
@@ -30,9 +33,24 @@ export default function LogScreen() {
   const [hoverMeal,     setHoverMeal]     = useState(null);
   const [scrollEnabled, setScrollEnabled] = useState(true);
 
-  async function handleDelete(id) {
-    removeEntry(id);
-    await deleteLogEntry(id);
+  async function handleDelete(entry) {
+    removeEntry(entry.id);
+    await deleteLogEntry(entry.id);
+
+    toast.info(`${entry.foodItem.name} removed`, {
+      actionLabel: 'Undo',
+      onAction: async () => {
+        const result = await addLogEntry({
+          foodItem: entry.foodItem,
+          mealType: entry.mealType,
+          portionGrams: entry.portionGrams,
+          date: entry.date,
+          macros: entry.macros,
+        });
+        const restored = result?.entries?.[result.entries.length - 1] ?? entry;
+        addEntry(restored);
+      },
+    });
   }
 
   function measureSections() {
@@ -59,12 +77,17 @@ export default function LogScreen() {
         hoverMealRef.current = null;
         setDraggingEntry(entry);
         setScrollEnabled(false);
-        dragY.setValue(evt.nativeEvent.pageY - rootOffset.current);
+        // Center the floating card around the touch point instead of pinning its top edge to the finger
+        const startY = evt.nativeEvent.pageY - rootOffset.current - 30;
+        dragStartY.current = startY;
+        lastPageY.current = evt.nativeEvent.pageY;
+        dragY.setValue(startY);
         measureSections();
       },
-      onPanResponderMove: (evt) => {
+      onPanResponderMove: (evt, gestureState) => {
+        dragY.setValue(dragStartY.current + gestureState.dy);
+        lastPageY.current = evt.nativeEvent.pageY;
         const localY = evt.nativeEvent.pageY - rootOffset.current;
-        dragY.setValue(localY);
         const hit = Object.entries(sectionBounds.current).find(
           ([, b]) => localY >= b.top && localY <= b.bottom
         );

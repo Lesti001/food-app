@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback,
-  ActivityIndicator, Modal, KeyboardAvoidingView, Platform, Alert,
+  ActivityIndicator, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { searchFoods } from '../../services/foodSearch';
@@ -10,6 +10,7 @@ import { createPrivateFood } from '../../services/privateFoods';
 import { useLogStore } from '../../store/logStore';
 import { Input } from '../../components/Input';
 import { SwipeSheet } from '../../components/SwipeSheet';
+import { toast } from '../../store/toastStore';
 
 function debounce(fn, delay) {
   let t;
@@ -90,9 +91,10 @@ export default function SearchScreen() {
       });
       setAddFoodVisible(false);
       if (query.trim()) doSearch(query);
+      toast.success(`${newName.trim()} added to your foods.`);
     } catch (err) {
       const message = err?.response?.data?.message ?? 'Could not save this food. Please try again.';
-      Alert.alert('Something went wrong', message);
+      toast.error(message);
     } finally {
       setSavingFood(false);
     }

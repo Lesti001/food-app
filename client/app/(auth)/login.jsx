@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, Alert,
+  KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 import { login, register } from '../../services/auth';
 import { Input } from '../../components/Input';
+import { toast } from '../../store/toastStore';
 
 export default function LoginScreen() {
   const [mode, setMode]         = useState('login');
@@ -27,7 +28,7 @@ export default function LoginScreen() {
       router.replace('/(tabs)/');
     } catch (err) {
       const message = err?.response?.data?.message ?? 'Something went wrong. Please try again.';
-      Alert.alert('Authentication failed', message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

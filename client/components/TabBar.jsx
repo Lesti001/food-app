@@ -30,7 +30,6 @@ function ProfileIcon({ color, size = 22 }) {
     </Svg>
   );
 }
-
 const TABS = [
   { name: 'index',   label: 'Home',    Icon: HomeIcon    },
   { name: 'log',     label: 'Log',     Icon: LogIcon     },

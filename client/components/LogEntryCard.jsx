@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 function TrashIcon({ color = '#94A3B8', size = 18 }) {
@@ -25,13 +25,6 @@ function DragHandleIcon({ color = '#CBD5E1', size = 16 }) {
 }
 
 export function LogEntryCard({ entry, onDelete, dragHandlers, isDragging }) {
-  function handleDelete() {
-    Alert.alert('Delete', `Remove ${entry.foodItem.name}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => onDelete(entry.id) },
-    ]);
-  }
-
   return (
     <View
       className="bg-surface rounded-2xl p-4 mb-2.5 flex-row items-center border border-border"
@@ -53,7 +46,7 @@ export function LogEntryCard({ entry, onDelete, dragHandlers, isDragging }) {
         </Text>
       </View>
 
-      <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+      <TouchableOpacity onPress={() => onDelete(entry)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
         <TrashIcon />
       </TouchableOpacity>
     </View>

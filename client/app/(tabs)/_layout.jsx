@@ -7,10 +7,10 @@ export default function TabsLayout() {
       tabBar={(props) => <TabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
-      <Tabs.Screen name="index"   options={{ title: 'Főoldal' }} />
-      <Tabs.Screen name="log"     options={{ title: 'Napló' }} />
-      <Tabs.Screen name="search"  options={{ title: 'Keresés' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
+      <Tabs.Screen name="index"   options={{ title: 'Home' }} />
+      <Tabs.Screen name="log"     options={{ title: 'Log' }} />
+      <Tabs.Screen name="search"  options={{ title: 'Search' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );
 }

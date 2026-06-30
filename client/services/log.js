@@ -19,6 +19,15 @@ export async function addLogEntry(data) {
   }
 }
 
+export async function fetchCalorieSummary(start, end) {
+  try {
+    const res = await apiClient.get('/log/summary', { params: { start, end } });
+    return res.data;
+  } catch {
+    return [];
+  }
+}
+
 export async function updateLogEntry(id, mealType) {
   try {
     const res = await apiClient.patch(`/log/${id}`, { mealType });
