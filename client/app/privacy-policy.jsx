@@ -1,6 +1,10 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { router } from 'expo-router';
+
+const LAST_UPDATED = 'September 10, 2026';
+// TODO: set a contact address before publishing (App Store requires a contact method).
+const CONTACT_EMAIL = 'REPLACE_WITH_YOUR_CONTACT_EMAIL';
 
 function Section({ title, children }) {
   return (
@@ -25,59 +29,55 @@ export default function PrivacyPolicyScreen() {
           <Text className="text-ink text-2xl font-black tracking-tight">Privacy Policy</Text>
         </View>
 
-        <Text className="text-faint text-xs mb-6">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
+        <Text className="text-faint text-xs mb-6">Last updated: {LAST_UPDATED}</Text>
 
-        <Section title="What we collect">
-          When you create an account, we collect your username and password (stored as a secure hash,
-          never in plain text). You may optionally provide your age, height, weight, activity level, and
-          nutrition goals. As you use the app, we store the foods, meals, and quantities you log, along
-          with the dates you logged them.
+        <Section title="Overview">
+          PlateLog is a fully offline app. It has no user accounts and no servers of its own. We do not
+          collect, store, transmit, or have access to any of your personal information. Everything you
+          enter stays on your device.
         </Section>
 
-        <Section title="Why we collect it">
-          This data is used only to provide the app's core functionality: calculating your daily calorie
-          and macronutrient targets, tracking your progress over time, and letting you search and save
-          foods. We do not use your data for advertising, and we do not sell or rent it to third parties.
+        <Section title="What's stored on your device">
+          Your profile details (age, height, weight, activity level), your daily calorie and macro goals,
+          the foods and meals you log, and any custom foods you add are all saved locally on your device
+          using its standard app storage. This information never leaves your device and is not sent to us
+          or anyone else.
         </Section>
 
-        <Section title="Where it's stored">
-          Your data is stored in a managed PostgreSQL database hosted on Microsoft Azure. Data sent
-          between the app and our server is encrypted in transit (TLS). A local copy of your recent data
-          may also be cached on your device so the app keeps working without an internet connection;
-          this local cache is not encrypted at rest.
+        <Section title="Food search (OpenFoodFacts)">
+          When you search for a food, the words you type are sent to OpenFoodFacts (openfoodfacts.org),
+          a free and open food database, so the app can show nutrition information for matching products.
+          Only the search term is sent — never your profile, your logs, or any personal identifier. When
+          you're offline, search still works using the app's built-in food list and your own custom
+          foods, with no network request at all. OpenFoodFacts has its own privacy policy at
+          world.openfoodfacts.org/privacy.
         </Section>
 
-        <Section title="Who can see it">
-          Your data is private to your account. We do not share your personal information, profile
-          details, or food logs with other users or third parties, except where required by law or where
-          necessary to operate our hosting infrastructure (e.g. our cloud database provider).
+        <Section title="No tracking or ads">
+          PlateLog contains no analytics, no advertising, and no third-party tracking. We do not build a
+          profile of you and have nothing to sell.
         </Section>
 
-        <Section title="Your rights">
-          You can update or correct your profile information at any time from the Profile tab. You may
-          request a copy of your data or request that your account and associated data be deleted by
-          contacting us at the email address below. We aim to act on such requests within a reasonable
-          time.
-        </Section>
-
-        <Section title="Data retention">
-          We retain your account and logged data for as long as your account remains active. If you
-          request deletion, we will remove your personal data from our active systems, except where we
-          are required to retain certain records by law.
+        <Section title="Deleting your data">
+          Because your data lives only on your device, you are always in control. You can erase everything
+          at any time using “Reset all data” in the Profile tab, or by deleting the app.
         </Section>
 
         <Section title="Children">
-          This app is not directed at children under the age of 16, and we do not knowingly collect data
-          from children under that age.
+          PlateLog is not directed at children under 16 and does not knowingly collect any data from
+          anyone.
         </Section>
 
         <Section title="Changes to this policy">
-          We may update this policy from time to time. If we make material changes, we will make
-          reasonable efforts to notify you within the app.
+          If this policy changes, the updated version will be included in a new release of the app and
+          posted at our public policy page.
         </Section>
 
         <Section title="Contact">
-          If you have questions about this policy or your data, contact us at: lestak.andras1@gmail.com
+          Questions about this policy? Contact:{' '}
+          <Text className="text-primary" onPress={() => Linking.openURL(`mailto:${CONTACT_EMAIL}`)}>
+            {CONTACT_EMAIL}
+          </Text>
         </Section>
       </ScrollView>
     </View>
