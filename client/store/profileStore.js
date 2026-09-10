@@ -7,12 +7,16 @@ export const useProfileStore = create(
   persist(
     (set) => ({
       profile: MOCK_PROFILE,
+      _hasHydrated: false,
+      setHasHydrated: (v) => set({ _hasHydrated: v }),
       setProfile: (profile) => set({ profile }),
       updateProfile: (data) => set((s) => ({ profile: { ...s.profile, ...data } })),
     }),
     {
       name: 'profile-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({ profile: state.profile }),
+      onRehydrateStorage: () => (state) => { state?.setHasHydrated(true); },
     }
   )
 );

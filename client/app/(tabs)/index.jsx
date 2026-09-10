@@ -5,13 +5,12 @@ import {
 } from 'react-native';
 import { Input } from '../../components/Input';
 import { SwipeSheet } from '../../components/SwipeSheet';
-import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { CalorieRing } from '../../components/CalorieRing';
 import { MacroCard } from '../../components/MacroCard';
 import { useLogStore } from '../../store/logStore';
 import { useProfileStore } from '../../store/profileStore';
-import { fetchDailyLog, addLogEntry, deleteLogEntry } from '../../services/log';
+import { addLogEntry, deleteLogEntry } from '../../services/log';
 import { toast } from '../../store/toastStore';
 
 const QUICK_FIELDS = [
@@ -24,19 +23,15 @@ const QUICK_FIELDS = [
 const INPUT_ACCESSORY_ID = 'quickAddInput';
 
 export default function HomeScreen() {
-  const { selectedDate, setDailyLog, dailyLog, addEntry, removeEntry } = useLogStore();
+  const selectedDate = useLogStore((s) => s.selectedDate);
+  const dailyLog     = useLogStore((s) => s.logsByDate[s.selectedDate]);
+  const addEntry     = useLogStore((s) => s.addEntry);
+  const removeEntry  = useLogStore((s) => s.removeEntry);
   const profile = useProfileStore((s) => s.profile);
 
   const [activeField, setActiveField] = useState(null);
   const [inputValue, setInputValue]   = useState('');
   const inputRef = useRef(null);
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['dailyLog', selectedDate],
-    queryFn: () => fetchDailyLog(selectedDate),
-  });
-
-  useEffect(() => { if (data) setDailyLog(data); }, [data]);
 
   const totals = dailyLog?.totals ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
   const today  = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -102,11 +97,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {isLoading ? (
-          <ActivityIndicator color="#7C9FE4" size="large" style={{ marginTop: 60 }} />
-        ) : (
-          <>
-            {/* Calorie Ring */}
+        {/* Calorie Ring */}
             <View className="items-center mb-6">
               <CalorieRing consumed={totals.calories} goal={profile.dailyCalorieGoal} />
             </View>
@@ -155,8 +146,6 @@ export default function HomeScreen() {
             >
               <Text className="text-muted text-sm font-medium">View today's log</Text>
             </TouchableOpacity>
-          </>
-        )}
       </ScrollView>
 
       {/* Quick-add modal */}

@@ -90,7 +90,6 @@ export default function ProfileScreen() {
       await useLogStore.persist.clearStorage();
       await useProfileStore.persist.clearStorage();
       useLogStore.setState({
-        dailyLog: null,
         logsByDate: {},
         selectedDate: new Date().toISOString().split('T')[0],
       });

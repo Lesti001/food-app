@@ -14,7 +14,10 @@ const MEALS = [
 ];
 
 export default function LogScreen() {
-  const { dailyLog, removeEntry, addEntry, moveEntry } = useLogStore();
+  const dailyLog   = useLogStore((s) => s.logsByDate[s.selectedDate]);
+  const removeEntry = useLogStore((s) => s.removeEntry);
+  const addEntry    = useLogStore((s) => s.addEntry);
+  const moveEntry   = useLogStore((s) => s.moveEntry);
   const entries = dailyLog?.entries ?? [];
   const totals  = dailyLog?.totals  ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
