@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useProfileStore } from '../../store/profileStore';
-import { useAuthStore } from '../../store/authStore';
+import { useLogStore } from '../../store/logStore';
 import { updateProfile } from '../../services/profile';
-import { logout } from '../../services/auth';
+import { MOCK_PROFILE } from '../../services/mockData';
 import { Input } from '../../components/Input';
+import { SwipeSheet } from '../../components/SwipeSheet';
 import { toast } from '../../store/toastStore';
 
 const ACTIVITY_OPTIONS = [
@@ -44,7 +45,8 @@ function Field({ label, value, onChange, unit, placeholder }) {
 
 export default function ProfileScreen() {
   const { profile, updateProfile: updateLocal } = useProfileStore();
-  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const [resetSheetVisible, setResetSheetVisible] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const [weight,      setWeight]      = useState(toFieldString(profile.weight));
   const [height,      setHeight]      = useState(toFieldString(profile.height));
@@ -82,10 +84,22 @@ export default function ProfileScreen() {
     toast.success('Your profile has been updated.');
   }
 
-  async function handleLogout() {
-    await logout();
-    clearAuth();
-    router.replace('/(auth)/login');
+  async function handleResetData() {
+    setResetting(true);
+    try {
+      await useLogStore.persist.clearStorage();
+      await useProfileStore.persist.clearStorage();
+      useLogStore.setState({
+        dailyLog: null,
+        logsByDate: {},
+        selectedDate: new Date().toISOString().split('T')[0],
+      });
+      useProfileStore.setState({ profile: MOCK_PROFILE });
+      setResetSheetVisible(false);
+      toast.success('All data has been reset.');
+    } finally {
+      setResetting(false);
+    }
   }
 
   function applyTDEE() {
@@ -171,12 +185,56 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={handleLogout}
-          className="bg-surface rounded-3xl py-5 items-center border border-border mb-6"
+          onPress={() => setResetSheetVisible(true)}
+          className="items-center py-3 mb-6"
         >
-          <Text className="text-peach text-base font-semibold">Sign Out</Text>
+          <Text className="text-faint text-xs font-medium">Reset all data</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Reset data confirmation */}
+      <Modal visible={resetSheetVisible} transparent animationType="none" statusBarTranslucent>
+        <View style={{ flex: 1 }}>
+          <TouchableWithoutFeedback onPress={() => !resetting && setResetSheetVisible(false)}>
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)' }} />
+          </TouchableWithoutFeedback>
+
+          <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+            <SwipeSheet
+              visible={resetSheetVisible}
+              onClose={() => !resetting && setResetSheetVisible(false)}
+              className="bg-surface rounded-t-3xl p-7 pt-4 gap-3"
+            >
+              <Text className="text-ink text-xl font-bold">Reset all data?</Text>
+              <Text className="text-muted text-sm leading-5">
+                This permanently clears your profile, goals, and every logged food from this
+                device. This action cannot be undone.
+              </Text>
+
+              <View className="flex-row gap-3 mt-3">
+                <TouchableOpacity
+                  onPress={() => setResetSheetVisible(false)}
+                  disabled={resetting}
+                  className="flex-1 bg-card rounded-2xl py-4 items-center border border-border"
+                >
+                  <Text className="text-muted text-base font-semibold">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleResetData}
+                  disabled={resetting}
+                  className="bg-peach rounded-2xl py-4 items-center"
+                  style={{ flex: 2, opacity: resetting ? 0.7 : 1 }}
+                >
+                  {resetting
+                    ? <ActivityIndicator color="#fff" />
+                    : <Text className="text-white text-base font-bold">Reset Everything</Text>
+                  }
+                </TouchableOpacity>
+              </View>
+            </SwipeSheet>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

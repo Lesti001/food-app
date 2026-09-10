@@ -9,6 +9,9 @@ export function Input({ style, className, ...props }) {
   return (
     <TextInput
       className={className}
+      // Keep single-line inputs on one line so a long placeholder can't wrap
+      // and drop below the cursor. Callers can override (e.g. multiline fields).
+      numberOfLines={1}
       style={[
         {
           textAlignVertical: 'center',

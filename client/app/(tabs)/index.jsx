@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, Text, ScrollView, TouchableOpacity, TouchableWithoutFeedback,
   ActivityIndicator, Modal, KeyboardAvoidingView, Platform, InputAccessoryView,
 } from 'react-native';
 import { Input } from '../../components/Input';
+import { SwipeSheet } from '../../components/SwipeSheet';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { CalorieRing } from '../../components/CalorieRing';
@@ -159,22 +160,23 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Quick-add modal */}
-      <Modal visible={!!activeField} transparent animationType="fade" statusBarTranslucent>
+      <Modal visible={!!activeField} transparent animationType="none" statusBarTranslucent>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ flex: 1 }}
         >
-          <TouchableOpacity
-            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}
-            activeOpacity={1}
-            onPress={() => setActiveField(null)}
-          >
-            <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-              <View className="bg-surface rounded-3xl px-6 pt-5 pb-10 mx-4 mb-8 border border-border"
+          <View style={{ flex: 1 }}>
+            <TouchableWithoutFeedback onPress={() => setActiveField(null)}>
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)' }} />
+            </TouchableWithoutFeedback>
+
+            <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+              <SwipeSheet
+                visible={!!activeField}
+                onClose={() => setActiveField(null)}
+                className="bg-surface rounded-3xl px-6 pt-4 pb-10 mx-4 mb-8 border border-border"
                 style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 24, elevation: 20 }}
               >
-                <View className="w-10 h-1 rounded-full bg-border self-center mb-5" />
-
                 {activeField && (
                   <>
                     <Text className="text-ink text-xl font-bold mb-1">
@@ -232,9 +234,9 @@ export default function HomeScreen() {
                     </View>
                   </>
                 )}
-              </View>
-            </TouchableOpacity>
-          </TouchableOpacity>
+              </SwipeSheet>
+            </View>
+          </View>
         </KeyboardAvoidingView>
       </Modal>
     </View>

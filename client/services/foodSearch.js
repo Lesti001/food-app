@@ -1,27 +1,34 @@
-import { apiClient } from './api';
+// Food search — fully offline first, with an optional online boost.
+//
+// Offline sources (always available, no network):
+//   1. The user's own custom foods (services/privateFoods)
+//   2. The bundled food database (services/foodDatabase)
+//
+// Online boost (best-effort, free & open, no account/API key):
+//   3. OpenFoodFacts — only queried when the user types a search term.
+//      If there's no connection it simply fails silently and we fall back
+//      to the local results.
+import { FOOD_DATABASE } from './foodDatabase';
+import { getPrivateFoods } from './privateFoods';
 
-const MOCK_FOODS = [
-  { id: 'mock-1', name: 'Chicken Breast (Grilled)', brand: 'Generic', per100g: { calories: 165, protein: 31, carbs: 0, fat: 3.6 } },
-  { id: 'mock-2', name: 'Brown Rice (Cooked)', brand: 'Generic', per100g: { calories: 112, protein: 2.6, carbs: 23, fat: 0.9 } },
-  { id: 'mock-3', name: 'Avocado', brand: 'Generic', per100g: { calories: 160, protein: 2, carbs: 9, fat: 15 } },
-  { id: 'mock-4', name: 'Greek Yogurt (Plain)', brand: 'Chobani', per100g: { calories: 59, protein: 10, carbs: 3.6, fat: 0.4 } },
-  { id: 'mock-5', name: 'Whole Egg (Large)', brand: 'Generic', per100g: { calories: 143, protein: 13, carbs: 0.7, fat: 10 } },
-  { id: 'mock-6', name: 'Oats (Rolled)', brand: 'Generic', per100g: { calories: 389, protein: 17, carbs: 66, fat: 7 } },
-  { id: 'mock-7', name: 'Banana', brand: 'Generic', per100g: { calories: 89, protein: 1.1, carbs: 23, fat: 0.3 } },
-  { id: 'mock-8', name: 'Salmon (Baked)', brand: 'Generic', per100g: { calories: 206, protein: 20, carbs: 0, fat: 13 } },
-];
+function filterLocal(foods, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return foods;
+  return foods.filter(
+    (f) =>
+      f.name.toLowerCase().includes(q) ||
+      (f.brand && f.brand.toLowerCase().includes(q))
+  );
+}
 
-async function searchBackendFoods(query) {
-  try {
-    const res = await apiClient.get('/foods/search', { params: query ? { q: query } : {} });
-    return res.data;
-  } catch {
-    return [];
-  }
+async function localFoods() {
+  const custom = await getPrivateFoods();
+  // Custom foods first so the user's own entries surface at the top.
+  return [...custom, ...FOOD_DATABASE];
 }
 
 export async function browseFoods() {
-  return searchBackendFoods('');
+  return localFoods();
 }
 
 async function searchOpenFoodFacts(query) {
@@ -30,9 +37,9 @@ async function searchOpenFoodFacts(query) {
     const res = await fetch(url);
     const data = await res.json();
     return (data.products ?? [])
-      .filter(p => p.product_name && p.nutriments)
-      .map(p => ({
-        id: p.id ?? p.code,
+      .filter((p) => p.product_name && p.nutriments)
+      .map((p) => ({
+        id: `off-${p.id ?? p.code}`,
         source: 'openfoodfacts',
         name: p.product_name,
         brand: p.brands,
@@ -44,20 +51,27 @@ async function searchOpenFoodFacts(query) {
         },
       }));
   } catch {
+    // Offline or request failed — that's fine, we still have local results.
     return [];
   }
 }
 
 export async function searchFoods(query) {
-  if (!query.trim()) return browseFoods();
+  const local = filterLocal(await localFoods(), query);
 
-  const [backendResults, offResults] = await Promise.all([
-    searchBackendFoods(query),
-    searchOpenFoodFacts(query),
-  ]);
+  // No search term → just show the browsable local list, no network call.
+  if (!query.trim()) return local;
 
-  const combined = [...backendResults, ...offResults];
-  if (combined.length > 0) return combined;
+  const offResults = await searchOpenFoodFacts(query);
 
-  return MOCK_FOODS.filter(f => f.name.toLowerCase().includes(query.toLowerCase()));
+  // De-dupe by id, keeping local (custom + database) matches first.
+  const seen = new Set(local.map((f) => f.id));
+  const merged = [...local];
+  for (const f of offResults) {
+    if (!seen.has(f.id)) {
+      seen.add(f.id);
+      merged.push(f);
+    }
+  }
+  return merged;
 }

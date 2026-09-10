@@ -1,31 +1,44 @@
 {
   "expo": {
-    "name": "NutriTrack",
-    "slug": "nutritrack",
+    "name": "PlateLog",
+    "slug": "platelog",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "scheme": "nutritrack",
+    "userInterfaceStyle": "light",
+    "scheme": "platelog",
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.platelog.app",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#C0BCF8",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.nutritrack.app"
+      "package": "com.platelog.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#F5F3FF"
+        }
+      ],
+      "expo-status-bar"
     ]
   }
 }

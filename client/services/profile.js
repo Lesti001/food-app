@@ -1,25 +1,13 @@
-import { apiClient } from './api';
-import { enqueue } from './syncQueue';
+// Profile & goals — fully offline. The zustand `profileStore` (persisted to
+// AsyncStorage) is the source of truth. These helpers just mirror updates into
+// it so callers keep a stable, promise-based API.
+import { useProfileStore } from '../store/profileStore';
 
 export async function fetchProfile() {
-  try {
-    const res = await apiClient.get('/profile');
-    return res.data;
-  } catch {
-    // Offline or request failed — caller should keep the last cached profile
-    return null;
-  }
+  return useProfileStore.getState().profile;
 }
 
 export async function updateProfile(data) {
-  try {
-    const res = await apiClient.put('/profile', data);
-    return res.data;
-  } catch (err) {
-    if (!err.response) {
-      // Network failure — queue it for when connectivity returns
-      await enqueue({ type: 'updateProfile', payload: data });
-    }
-    return null;
-  }
+  useProfileStore.getState().updateProfile(data);
+  return useProfileStore.getState().profile;
 }
