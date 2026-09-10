@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "scheme": "platelog",
     "ios": {
-      "bundleIdentifier": "com.platelog.app",
+      "bundleIdentifier": "com.platelog.calorietracker",
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
@@ -21,7 +21,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.platelog.app"
+      "package": "com.platelog.calorietracker"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -39,6 +39,12 @@
         }
       ],
       "expo-status-bar"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d7e91384-9f4f-4afa-92da-e4ec8530a08e"
+      }
+    }
   }
 }
