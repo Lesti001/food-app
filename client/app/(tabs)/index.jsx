@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TouchableWithoutFeedback,
-  ActivityIndicator, Modal, KeyboardAvoidingView, Platform, InputAccessoryView,
+  ActivityIndicator, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { Input } from '../../components/Input';
 import { SwipeSheet } from '../../components/SwipeSheet';
@@ -12,6 +12,7 @@ import { useLogStore } from '../../store/logStore';
 import { useProfileStore } from '../../store/profileStore';
 import { addLogEntry, deleteLogEntry } from '../../services/log';
 import { toast } from '../../store/toastStore';
+import { suppressKeyboardBar, releaseKeyboardBar } from '../../store/keyboardBarStore';
 
 const QUICK_FIELDS = [
   { key: 'calories', label: 'Calories',      unit: 'kcal', color: '#7C9FE4', track: '#DBEAFE' },
@@ -19,8 +20,6 @@ const QUICK_FIELDS = [
   { key: 'carbs',    label: 'Carbohydrates',  unit: 'g',    color: '#C4B5FD', track: '#EDE9FE' },
   { key: 'fat',      label: 'Fat',            unit: 'g',    color: '#FDE68A', track: '#FEF9C3' },
 ];
-
-const INPUT_ACCESSORY_ID = 'quickAddInput';
 
 export default function HomeScreen() {
   const selectedDate = useLogStore((s) => s.selectedDate);
@@ -33,6 +32,14 @@ export default function HomeScreen() {
   const [inputValue, setInputValue]   = useState('');
   const inputRef = useRef(null);
 
+  // Hide the global keyboard pill while the quick-add modal is open — it has its
+  // own Cancel/Add buttons that dismiss the keyboard.
+  useEffect(() => {
+    if (!activeField) return;
+    suppressKeyboardBar();
+    return releaseKeyboardBar;
+  }, [activeField]);
+
   const totals = dailyLog?.totals ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
   const today  = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -43,12 +50,25 @@ export default function HomeScreen() {
   }
 
   async function handleConfirm() {
-    const amount = parseFloat(inputValue);
+    const amount = Math.round(parseFloat(inputValue));
     const field = activeField;
+
+    if (isNaN(amount) || amount <= 0 || !field) {
+      setActiveField(null);
+      setInputValue('');
+      return;
+    }
+
+    // Guard against unrealistic values. Keep the modal open so the user can fix
+    // the number instead of losing it, and surface the reason via a toast.
+    const max = field.key === 'calories' ? 6000 : 500;
+    if (amount > max) {
+      toast.error(field.key === 'calories' ? 'Too many calories' : `Too much ${field.key}`);
+      return;
+    }
+
     setActiveField(null);
     setInputValue('');
-
-    if (isNaN(amount) || amount <= 0 || !field) return;
 
     const payload = {
       foodItem: {
@@ -187,9 +207,7 @@ export default function HomeScreen() {
                         keyboardType="numeric"
                         placeholder="0"
                         placeholderTextColor="#CBD5E1"
-                        returnKeyType="done"
                         onSubmitEditing={handleConfirm}
-                        inputAccessoryViewID={Platform.OS === 'ios' ? INPUT_ACCESSORY_ID : undefined}
                         className="flex-1 text-ink font-black"
                         style={{ fontSize: 40, lineHeight: 48, paddingVertical: 12 }}
                       />
@@ -197,13 +215,6 @@ export default function HomeScreen() {
                         {activeField.unit}
                       </Text>
                     </View>
-
-                    {/* iOS: empty InputAccessoryView removes the Done toolbar */}
-                    {Platform.OS === 'ios' && (
-                      <InputAccessoryView nativeID={INPUT_ACCESSORY_ID}>
-                        <View />
-                      </InputAccessoryView>
-                    )}
 
                     {/* Buttons */}
                     <View className="flex-row gap-3">

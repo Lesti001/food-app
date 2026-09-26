@@ -113,6 +113,7 @@ export default function ProfileScreen() {
       <ScrollView
         contentContainerStyle={{ paddingTop: 64, paddingHorizontal: 20, paddingBottom: 130 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <Text className="text-ink text-3xl font-black tracking-tight mb-6">Profile & Goals</Text>
 

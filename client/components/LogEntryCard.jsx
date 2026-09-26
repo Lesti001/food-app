@@ -36,7 +36,7 @@ export function LogEntryCard({ entry, onDelete, dragHandlers, isDragging }) {
 
       <View className="flex-1">
         <Text className="text-ink text-base font-semibold">{entry.foodItem.name}</Text>
-        <Text className="text-muted text-xs mt-0.5">{entry.portionGrams}g</Text>
+        <Text className="text-muted text-xs mt-0.5">{Math.round(entry.portionGrams)}g</Text>
       </View>
 
       <View className="items-end mr-3">

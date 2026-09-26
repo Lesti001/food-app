@@ -11,7 +11,7 @@ export function CalorieRing({ consumed, goal }) {
   const progress  = hasGoal ? Math.min(consumed / goal, 1) : 0;
   const overLimit = hasGoal && consumed > goal;
   const dash      = CIRC * progress;
-  const remaining = hasGoal ? Math.max(goal - consumed, 0) : 0;
+  const remaining = hasGoal ? Math.round(Math.max(goal - consumed, 0)) : 0;
 
   const gradStart = overLimit ? '#FCA5A5' : '#A5F3D0';
   const gradEnd   = overLimit ? '#F87171' : '#6EE7B7';

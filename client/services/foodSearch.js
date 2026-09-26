@@ -31,17 +31,37 @@ export async function browseFoods() {
   return localFoods();
 }
 
+// Only keep names written in the Latin alphabet — this drops entries in
+// Cyrillic, CJK, Arabic, Greek, etc. so the results stay English-readable.
+function isLatinText(str) {
+  return !/[^\u0000-ɏ‘-‟ -⁯]/.test(str);
+}
+
 async function searchOpenFoodFacts(query) {
   try {
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=20`;
+    // lc=en asks OpenFoodFacts for the English interface/fields; we then take
+    // the English product name and skip anything that isn't in English.
+    const url =
+      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}` +
+      `&search_simple=1&action=process&json=1&page_size=50&lc=en` +
+      `&fields=code,id,product_name,product_name_en,brands,lang,nutriments`;
     const res = await fetch(url);
     const data = await res.json();
     return (data.products ?? [])
-      .filter((p) => p.product_name && p.nutriments)
-      .map((p) => ({
+      .map((p) => {
+        // Prefer the explicit English name; fall back to the generic name only
+        // when the product itself is tagged as English.
+        const name = p.product_name_en || (p.lang === 'en' ? p.product_name : null);
+        return { p, name };
+      })
+      .filter(({ p, name }) => {
+        const kcal = p.nutriments?.['energy-kcal_100g'];
+        return name && isLatinText(name) && kcal != null && kcal > 0;
+      })
+      .map(({ p, name }) => ({
         id: `off-${p.id ?? p.code}`,
         source: 'openfoodfacts',
-        name: p.product_name,
+        name: name.trim(),
         brand: p.brands,
         per100g: {
           calories: p.nutriments?.['energy-kcal_100g'] ?? 0,

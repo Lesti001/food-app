@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Toast } from '../components/Toast';
+import { KeyboardDismissBar } from '../components/KeyboardDismissBar';
 import '../global.css';
 
 const queryClient = new QueryClient({
@@ -20,6 +21,7 @@ export default function RootLayout() {
           <Stack.Screen name="privacy-policy" />
         </Stack>
         <Toast />
+        <KeyboardDismissBar />
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

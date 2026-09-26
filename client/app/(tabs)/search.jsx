@@ -11,6 +11,7 @@ import { useLogStore } from '../../store/logStore';
 import { Input } from '../../components/Input';
 import { SwipeSheet } from '../../components/SwipeSheet';
 import { toast } from '../../store/toastStore';
+import { suppressKeyboardBar, releaseKeyboardBar } from '../../store/keyboardBarStore';
 
 function debounce(fn, delay) {
   let t;
@@ -38,6 +39,14 @@ export default function SearchScreen() {
   const [newCarbs,    setNewCarbs]    = useState('');
   const [newFat,      setNewFat]      = useState('');
   const [savingFood,  setSavingFood]  = useState(false);
+
+  // Hide the global keyboard pill while a modal is open — each modal has its own
+  // Cancel/Add/Save buttons that dismiss the keyboard.
+  useEffect(() => {
+    if (!selected && !addFoodVisible) return;
+    suppressKeyboardBar();
+    return releaseKeyboardBar;
+  }, [selected, addFoodVisible]);
 
   const doSearch = useCallback(debounce(async (q) => {
     setLoading(true);
@@ -128,7 +137,7 @@ export default function SearchScreen() {
         </View>
 
         {/* Search bar */}
-        <View className="flex-row items-center bg-surface rounded-2xl px-4 border border-border">
+        <View className="flex-row items-center bg-surface rounded-2xl px-4 py-3.5 border border-border">
           <Text className="text-muted text-sm mr-2.5 font-semibold">Search</Text>
           <Input
             value={query}
@@ -136,7 +145,11 @@ export default function SearchScreen() {
             placeholder="Search for a food..."
             placeholderTextColor="#CBD5E1"
             className="flex-1 text-ink"
-            style={{ fontSize: 16, paddingVertical: 14, minHeight: 48 }}
+            // The CONTAINER (py-3.5) provides the height; the field itself is
+            // exactly one line tall (no vertical padding). On the New Architecture
+            // any vertical space inside the TextInput lets iOS drop the placeholder
+            // a line — with zero inner padding there is nowhere for it to slip.
+            style={{ fontSize: 16, paddingVertical: 0 }}
           />
           {loading && <ActivityIndicator color="#7C9FE4" size="small" />}
         </View>
@@ -153,6 +166,9 @@ export default function SearchScreen() {
       <FlatList
         data={results}
         keyExtractor={(i) => i.id}
+        // Without this, the first tap on a result only dismisses the keyboard and
+        // is swallowed; "handled" delivers the tap to the row on the first try.
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 130 }}
         renderItem={({ item }) => (
           <TouchableOpacity
@@ -218,15 +234,15 @@ export default function SearchScreen() {
                       <Text className="text-muted text-sm -mt-1 mb-3">kcal</Text>
                       <View className="flex-row justify-around w-full">
                         <View className="items-center">
-                          <Text className="text-mint text-base font-bold">{((selected.per100g.protein ?? 0) * r).toFixed(1)}g</Text>
+                          <Text className="text-mint text-base font-bold">{Math.round((selected.per100g.protein ?? 0) * r)}g</Text>
                           <Text className="text-muted text-xs">Protein</Text>
                         </View>
                         <View className="items-center">
-                          <Text className="text-lavender text-base font-bold">{((selected.per100g.carbs ?? 0) * r).toFixed(1)}g</Text>
+                          <Text className="text-lavender text-base font-bold">{Math.round((selected.per100g.carbs ?? 0) * r)}g</Text>
                           <Text className="text-muted text-xs">Carbs</Text>
                         </View>
                         <View className="items-center">
-                          <Text className="text-amber text-base font-bold">{((selected.per100g.fat ?? 0) * r).toFixed(1)}g</Text>
+                          <Text className="text-amber text-base font-bold">{Math.round((selected.per100g.fat ?? 0) * r)}g</Text>
                           <Text className="text-muted text-xs">Fat</Text>
                         </View>
                       </View>
