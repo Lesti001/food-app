@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback,
+  View, Text, TextInput, FlatList, TouchableOpacity, TouchableWithoutFeedback,
   ActivityIndicator, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
@@ -136,21 +136,30 @@ export default function SearchScreen() {
           ))}
         </View>
 
-        {/* Search bar */}
-        <View className="flex-row items-center bg-surface rounded-2xl px-4 py-3.5 border border-border">
+        {/* Search bar.
+            The native TextInput placeholder mis-positions on the iOS New
+            Architecture (renders low and clipped). Instead of relying on it, we
+            leave the field's placeholder empty and draw our OWN <Text> over it,
+            centered by a wrapper we fully control — so it can never slip. */}
+        <View className="flex-row items-center bg-surface rounded-2xl px-4 border border-border" style={{ height: 52 }}>
           <Text className="text-muted text-sm mr-2.5 font-semibold">Search</Text>
-          <Input
-            value={query}
-            onChangeText={(t) => { setQuery(t); doSearch(t); }}
-            placeholder="Search for a food..."
-            placeholderTextColor="#CBD5E1"
-            className="flex-1 text-ink"
-            // The CONTAINER (py-3.5) provides the height; the field itself is
-            // exactly one line tall (no vertical padding). On the New Architecture
-            // any vertical space inside the TextInput lets iOS drop the placeholder
-            // a line — with zero inner padding there is nowhere for it to slip.
-            style={{ fontSize: 16, paddingVertical: 0 }}
-          />
+          <View style={{ flex: 1, alignSelf: 'stretch', justifyContent: 'center' }}>
+            <TextInput
+              value={query}
+              onChangeText={(t) => { setQuery(t); doSearch(t); }}
+              style={{ height: '100%', fontSize: 16, color: '#1E1B4B', paddingVertical: 0, margin: 0 }}
+            />
+            {query.length === 0 && (
+              <View
+                pointerEvents="none"
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center' }}
+              >
+                <Text numberOfLines={1} style={{ fontSize: 16, color: '#CBD5E1' }}>
+                  Search for a food...
+                </Text>
+              </View>
+            )}
+          </View>
           {loading && <ActivityIndicator color="#7C9FE4" size="small" />}
         </View>
 
